@@ -93,7 +93,44 @@ public class Model extends Observable {
         checkGameOver();
         setChanged();
     }
-
+    public boolean helper(int col, int size) {
+        // 合并
+        int fast = size-1;
+        int slow = size-1;
+        boolean change = false;
+        while (fast>=0 && slow>=0) {
+            while (slow>=0 && board.tile(col, slow)==null) slow--;
+            fast = slow-1;
+            while (fast>=0 && board.tile(col, fast)==null) fast--;
+            if (fast>=0 && slow>=0) {
+                Tile f = board.tile(col, fast);
+                Tile s = board.tile(col, slow);
+                if (f.value()==s.value()) {
+                    if (board.move(col, slow, f)) {
+                        score += board.tile(col, slow).value();
+                        change = true;
+                    }
+                }
+                else fast--;
+                slow--;
+            }
+        }
+        //前移动
+        fast = size-1; //指向第一个tile
+        slow = size-1; //指向第一个null
+        while (fast>=0 && slow>=0) {
+            while (slow>=0 && board.tile(col, slow)!=null) slow--;
+            fast = slow;
+            while (fast>=0 && board.tile(col, fast)==null) fast--;
+            if (slow<0 || fast<0) break;
+            if (slow>fast) {
+                board.move(col, slow, board.tile(col, fast));
+                change = true;
+            }
+            else break;
+        }
+        return change;
+    }
     /** Tilt the board toward SIDE. Return true iff this changes the board.
      *
      * 1. If two Tile objects are adjacent in the direction of motion and have
@@ -113,6 +150,12 @@ public class Model extends Observable {
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
+        board.setViewingPerspective(side);
+        int size = board.size();
+        for(int j=0; j<size; j++) {
+            if (helper(j, size)) changed = true;
+        }
+        board.setViewingPerspective(Side.NORTH);
 
         checkGameOver();
         if (changed) {
@@ -138,6 +181,14 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        int boardLength = b.size();
+        for (int i = 0; i < boardLength; i+=1) {
+            for (int j = 0; j < boardLength; j+=1) {
+                if (b.tile(i, j)==null) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -148,6 +199,12 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        int size = b.size();
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (b.tile(i, j) != null && b.tile(i, j).value() == MAX_PIECE) { return true; }
+            }
+        }
         return false;
     }
 
@@ -159,6 +216,17 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        if (emptySpaceExists(b)) return true;
+        int n = b.size();
+        for(int i = 0; i< n ;i++) {
+            for (int j = 0; j < n; j++){
+                Tile t = b.tile(i, j);
+                if (t!=null) {
+                    if (i + 1 < n && b.tile(i + 1, j)!=null && b.tile(i + 1, j).value() == t.value()) return true;
+                    if (j+1<n && b.tile(i,j+1)!=null && b.tile(i, j+1).value()==t.value()) return true;
+                }
+            }
+        }
         return false;
     }
 
