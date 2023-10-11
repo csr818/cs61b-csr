@@ -1,19 +1,18 @@
 package deque;
 
-import com.sun.source.tree.BreakTree;
 import java.util.Iterator;
 
-public class LinkedListDeque<T> implements Deque<T> {
+public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     private static class Node<T> {
         T item = null;
         Node<T> pre = null;
         Node<T> nxt = null;
-        public Node(T it, Node<T> p, Node<T> n) {
+        Node(T it, Node<T> p, Node<T> n) {
             item = it;
             pre = p;
             nxt = n;
         }
-        public Node() { }
+        Node() { }
     }
 
     private Node<T> head;
@@ -46,7 +45,7 @@ public class LinkedListDeque<T> implements Deque<T> {
 
     public void printDeque() {
         Node<T> p = head.nxt;
-        while (p!=tail) {
+        while (p != tail) {
             System.out.print(p.item + " ");
             p = p.nxt;
         }
@@ -80,24 +79,22 @@ public class LinkedListDeque<T> implements Deque<T> {
     @Override
     public T get(int index) {
         Node<T> p = head.nxt;
-        for (int i = 0;p != tail && i < index; i++) {
+        for (int i = 0; p != tail && i < index; i++) {
             p = p.nxt;
         }
-        if (p==tail) {
+        if (p == tail) {
             return null;
         }
         return p.item;
     }
 
     private T dfs(int index, Node<T> p) {
-        if (index==0 && p!=tail) {
+        if (index == 0 && p != tail) {
             return p.item;
-        }
-        else if (p==tail) {
+        } else if (p == tail) {
             return null;
-        }
-        else {
-            return dfs(index-1, p.nxt);
+        } else {
+            return dfs(index - 1, p.nxt);
         }
     }
     public T getRecursive(int index) {
@@ -109,6 +106,7 @@ public class LinkedListDeque<T> implements Deque<T> {
         return size;
     }
 
+    @Override
     public Iterator<T> iterator() {
         return new LinkedListIterator();
     }
@@ -116,7 +114,7 @@ public class LinkedListDeque<T> implements Deque<T> {
     private class LinkedListIterator implements Iterator<T> {
         private int curPos;
 
-        public LinkedListIterator() {
+        LinkedListIterator() {
             curPos = 0;
         }
 
@@ -131,17 +129,17 @@ public class LinkedListDeque<T> implements Deque<T> {
     }
 
     public boolean equals(Object o) {
-        if (o instanceof LinkedListDeque<?>) {
-            LinkedListDeque<T> tmp = (LinkedListDeque<T>) o;
-             if (tmp.size() != size()) {
+        if (o instanceof Deque<?>) {
+            Deque<T> tmp = (Deque<T>) o;
+            if (tmp.size() != size()) {
                 return false;
             }
-             for (int i = 0; i < size(); i++) {
-                 if (!tmp.get(i).equals(get(i))) {
-                     return false;
-                 }
-             }
-             return true;
+            for (int i = 0; i < size(); i++) {
+                if (!tmp.get(i).equals(get(i))) {
+                    return false;
+                }
+            }
+            return true;
         }
         return false;
     }

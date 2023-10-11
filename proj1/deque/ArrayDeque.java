@@ -1,10 +1,10 @@
 package deque;
 import java.util.Iterator;
 
-public class ArrayDeque<T> implements Deque<T> {
+public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     private int N = 8;
     private int size = 0;
-    private int nextFirst = N-1;
+    private int nextFirst = N - 1;
     private int nextLast = 0;
     private T[] items;
 
@@ -13,22 +13,22 @@ public class ArrayDeque<T> implements Deque<T> {
     }
 
     private void resize(boolean inc) {
-        int old_N = N;
-        N = inc ? N*2 : N/2;
+        int oldN = N;
+        N = inc ? N * 2 : N / 2;
         T[] tmp = (T[]) new Object[N];
         int index = 0;
-        int p = (nextFirst + 1) % old_N;
+        int p = (nextFirst + 1) % oldN;
         if (inc) { // is full
             tmp[index] = items[p];
             items[p] = null;
             index += 1;
-            p = (p + 1) % old_N;
+            p = (p + 1) % oldN;
         }
-        while (p!=nextLast) {
+        while (p != nextLast) {
             tmp[index] = items[p];
             items[p] = null;
             index += 1;
-            p = (p + 1) % old_N;
+            p = (p + 1) % oldN;
         }
         nextLast = index;
         nextFirst = N - 1;
@@ -37,7 +37,7 @@ public class ArrayDeque<T> implements Deque<T> {
     }
     @Override
     public void addLast(T it) {
-        if (size==N) {
+        if (size == N) {
             resize(true);
         }
         items[nextLast] = it;
@@ -50,7 +50,7 @@ public class ArrayDeque<T> implements Deque<T> {
             resize(true);
         }
         items[nextFirst] = it;
-        nextFirst = (nextFirst -1 + N)%N;
+        nextFirst = (nextFirst - 1 + N) % N;
         size += 1;
     }
     @Override
@@ -76,7 +76,7 @@ public class ArrayDeque<T> implements Deque<T> {
         T ret = items[nextLast];
         items[nextLast] = null;
         size -= 1;
-        if (N>=16 && size < N/4) {
+        if (N >= 16 && size < N / 4) {
             resize(false);
         }
         return ret;
@@ -91,7 +91,7 @@ public class ArrayDeque<T> implements Deque<T> {
         T ret = items[nextFirst];
         items[nextFirst] = null;
         size -= 1;
-        if (N >= 16 && size < N/4) {
+        if (N >= 16 && size < N / 4) {
             resize(false);
         }
         return ret;
@@ -106,8 +106,8 @@ public class ArrayDeque<T> implements Deque<T> {
     }
 
     public boolean equals(Object o) {
-        if (o instanceof ArrayDeque<?>) {
-            ArrayDeque<T> tmp = (ArrayDeque<T>) o;
+        if (o instanceof Deque<?>) {
+            Deque<T> tmp = (Deque<T>) o;
             if (tmp.size() != size()) {
                 return false;
             }
@@ -120,7 +120,7 @@ public class ArrayDeque<T> implements Deque<T> {
         }
         return false;
     }
-
+    @Override
     public Iterator<T> iterator() {
         return new ArrayDequeIterator();
     }
