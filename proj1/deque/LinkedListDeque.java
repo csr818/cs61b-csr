@@ -1,9 +1,9 @@
 package deque;
 
 import com.sun.source.tree.BreakTree;
+import java.util.Iterator;
 
-
-public class LinkedListDeque<T> {
+public class LinkedListDeque<T> implements Deque<T> {
     private static class Node<T> {
         T item = null;
         Node<T> pre = null;
@@ -27,6 +27,8 @@ public class LinkedListDeque<T> {
         tail.pre = head;
         size = 0;
     }
+
+    @Override
     public void addLast(T it) {
         Node<T> nd = new Node<T>(it, tail.pre, tail);
         tail.pre.nxt = nd;
@@ -34,15 +36,14 @@ public class LinkedListDeque<T> {
         size += 1;
     }
 
+    @Override
     public void addFirst(T it) {
         Node<T> nd = new Node<T>(it, head, head.nxt);
         head.nxt.pre = nd;
         head.nxt = nd;
         size += 1;
     }
-    public boolean isEmpty() {
-        return size==0;
-    }
+
     public void printDeque() {
         Node<T> p = head.nxt;
         while (p!=tail) {
@@ -51,6 +52,8 @@ public class LinkedListDeque<T> {
         }
         System.out.println();
     }
+
+    @Override
     public T removeFirst() {
         if (isEmpty()) {
             return null;
@@ -62,6 +65,7 @@ public class LinkedListDeque<T> {
         return ret;
     }
 
+    @Override
     public T removeLast() {
         if (isEmpty()) {
             return null;
@@ -73,6 +77,7 @@ public class LinkedListDeque<T> {
         return ret;
     }
 
+    @Override
     public T get(int index) {
         Node<T> p = head.nxt;
         for (int i = 0;p != tail && i < index; i++) {
@@ -99,8 +104,45 @@ public class LinkedListDeque<T> {
         return dfs(index, head.nxt);
     }
 
+    @Override
     public int size() {
         return size;
     }
-    // TODO: implements method of iteration
+
+    public Iterator<T> iterator() {
+        return new LinkedListIterator();
+    }
+
+    private class LinkedListIterator implements Iterator<T> {
+        private int curPos;
+
+        public LinkedListIterator() {
+            curPos = 0;
+        }
+
+        public boolean hasNext() {
+            return curPos < size;
+        }
+        public T next() {
+            T retItem = get(curPos);
+            curPos += 1;
+            return retItem;
+        }
+    }
+
+    public boolean equals(Object o) {
+        if (o instanceof LinkedListDeque<?>) {
+            LinkedListDeque<T> tmp = (LinkedListDeque<T>) o;
+             if (tmp.size() != size()) {
+                return false;
+            }
+             for (int i = 0; i < size(); i++) {
+                 if (!tmp.get(i).equals(get(i))) {
+                     return false;
+                 }
+             }
+             return true;
+        }
+        return false;
+    }
 }

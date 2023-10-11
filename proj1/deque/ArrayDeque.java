@@ -1,6 +1,7 @@
 package deque;
+import java.util.Iterator;
 
-public class ArrayDeque<T> {
+public class ArrayDeque<T> implements Deque<T> {
     private int N = 8;
     private int size = 0;
     private int nextFirst = N-1;
@@ -34,6 +35,7 @@ public class ArrayDeque<T> {
         items = tmp;
 
     }
+    @Override
     public void addLast(T it) {
         if (size==N) {
             resize(true);
@@ -42,7 +44,7 @@ public class ArrayDeque<T> {
         nextLast = (nextLast + 1) % N;
         size += 1;
     }
-
+    @Override
     public void addFirst(T it) {
         if (size == N) {
             resize(true);
@@ -51,15 +53,11 @@ public class ArrayDeque<T> {
         nextFirst = (nextFirst -1 + N)%N;
         size += 1;
     }
-
-    public boolean isEmpty() {
-        return size==0;
-    }
-
+    @Override
     public int size() {
         return size;
     }
-
+    @Override
     public void printDeque() {
         int p = (nextFirst + 1) % N;
         while (p != nextLast) {
@@ -69,6 +67,7 @@ public class ArrayDeque<T> {
         System.out.println();
     }
 
+    @Override
     public T removeLast() {
         if (isEmpty()) {
             return null;
@@ -83,6 +82,7 @@ public class ArrayDeque<T> {
         return ret;
     }
 
+    @Override
     public T removeFirst() {
         if (isEmpty()) {
             return null;
@@ -97,10 +97,45 @@ public class ArrayDeque<T> {
         return ret;
     }
 
+    @Override
     public T get(int index) {
         if (index >= size()) {
             return null;
         }
         return items[(nextFirst + 1 + index) % N];
+    }
+
+    public boolean equals(Object o) {
+        if (o instanceof ArrayDeque<?>) {
+            ArrayDeque<T> tmp = (ArrayDeque<T>) o;
+            if (tmp.size() != size()) {
+                return false;
+            }
+            for (int i = 0; i < size(); i++) {
+                if (!get(i).equals(tmp.get(i))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public Iterator<T> iterator() {
+        return new ArrayDequeIterator();
+    }
+
+    private class ArrayDequeIterator implements Iterator<T> {
+        private int curPos = 0;
+
+        public boolean hasNext() {
+            return curPos < size();
+        }
+
+        public T next() {
+            T retItem = get(curPos);
+            curPos += 1;
+            return retItem;
+        }
     }
 }
