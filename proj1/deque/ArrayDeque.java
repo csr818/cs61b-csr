@@ -126,13 +126,13 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     private class ArrayDequeIterator implements Iterator<T> {
-        private int curPos = 0;
+            private int curPos = 0;
 
-        public boolean hasNext() {
-            return curPos < size();
-        }
+            public boolean hasNext() {
+                return curPos < size();
+            }
 
-        public T next() {
+            public T next() {
             T retItem = get(curPos);
             curPos += 1;
             return retItem;
