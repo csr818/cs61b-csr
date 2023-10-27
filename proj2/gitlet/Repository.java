@@ -2,6 +2,7 @@ package gitlet;
 
 import java.io.File;
 import static gitlet.Utils.*;
+import java.util.Date;
 
 // TODO: any imports you need here
 
@@ -26,4 +27,17 @@ public class Repository {
     public static final File GITLET_DIR = join(CWD, ".gitlet");
 
     /* TODO: fill in the rest of this class. */
+    public void setupRepository() {
+        if (!GITLET_DIR.exists()) {
+            try {
+                GITLET_DIR.mkdir();
+                //Commit first = Commit("initial commit", new Date());
+
+            } catch (SecurityException se) {
+                throw new GitletException("cannot create repository ");
+            }
+        } else {
+            throw new GitletException("A Gitlet version-control system already exists in the current directory.");
+        }
+    }
 }
