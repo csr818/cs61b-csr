@@ -2,7 +2,16 @@ package gitlet;
 
 // TODO: any imports you need here
 
-import java.util.Date; // TODO: You'll likely use this in this class
+import org.w3c.dom.UserDataHandler;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+import static gitlet.Utils.*;
 
 /** Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -10,7 +19,7 @@ import java.util.Date; // TODO: You'll likely use this in this class
  *
  *  @author TODO
  */
-public class Commit {
+public class Commit implements Serializable {
     /**
      * TODO: add instance variables here.
      *
@@ -21,6 +30,46 @@ public class Commit {
 
     /** The message of this Commit. */
     private String message;
+    private String date;
+    private String parent;
+    private Map<String, String> nameToBlobID = new HashMap<>();
+
 
     /* TODO: fill in the rest of this class. */
+
+    public static String dateToTimeStamp(Date date) {
+        DateFormat dateFormat = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.US);
+        return dateFormat.format(date);
+    }
+    public Commit(String message, Date date, String parent) {
+        this.message = message;
+        this.date = dateToTimeStamp(date);
+        this.parent = parent;
+    }
+
+    // initialize the initial commit
+    public Commit() {
+        this.message = "initial commit";
+        this.date = dateToTimeStamp(new Date(0));
+        this.parent = null;
+    }
+
+    /** calculate ID and create a file named ID store*/
+    public void saveCommit(String id){
+        File f = join(Repository.OBJECTS_DIR, id);
+        try {
+            f.createNewFile();
+        } catch (IOException e) {
+            throw error(e.toString());
+        }
+        writeObject(f, this);
+    }
+    public String generateID() {
+        return sha1(this.message, this.date, this.parent, this.nameToBlobID);
+    }
+
+    public boolean sameBlob(String name, String id) {
+        String storeId = nameToBlobID.getOrDefault(name, "");
+        return storeId.equals(id);
+    }
 }
