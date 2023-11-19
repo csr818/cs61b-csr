@@ -3,6 +3,10 @@ package gitlet;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+
 import gitlet.Commit;
 import gitlet.Blob;
 
@@ -106,13 +110,40 @@ public class Repository {
         s.saveStage();
     }
 
-    /* TODO: fill in the rest of this class. */
+    private static Commit headRead() {
+        String headId = readContentsAsString(HEAD_FILE);
+        File f = join(OBJECTS_DIR, headId);
+        return readObject(f, Commit.class);
+    }
 
-    /** check whether the .gitlet has existed, or not create .gitlet ,gets a init commit and write in the file */
-
-    //create a blob try to store in stage
-    public static void storeToStage(String filename) {
-        Blob b = new Blob(filename);
-        b.saveBlob();
+    private static void writeHead(String id) {
+        String headId = readContentsAsString(HEAD_FILE);
+        File f = join(OBJECTS_DIR, headId);
+        writeContents(f, id);
+    }
+    public static void commit(String message) {
+        // copy head commit -- try to update new commit from addStage
+        Commit currentCommit = headRead();
+        HashMap<String, String> n2b = currentCommit.getNameToBlobID();
+        Stage s = Stage.readStage();
+        // try to update
+        HashMap<String, String> addStage = s.getAddStage();
+        HashSet<String> removalStage = s.getRemovalStage();
+        for (String fileName : removalStage) {
+            n2b.remove(fileName);
+        }
+        for (Map.Entry<String, String> entry : addStage.entrySet()) {
+            String fileName = entry.getKey();
+            String id = entry.getValue();
+            n2b.put(fileName, id);
+        }
+        // change commit
+        currentCommit.updateMessage(message);
+        currentCommit.updateTime(new Date());
+        currentCommit.updateParent(readContentsAsString(HEAD_FILE));
+        // save commit
+        String commitId = currentCommit.generateID();
+        currentCommit.saveCommit(commitId);
+        writeHead(commitId);
     }
 }

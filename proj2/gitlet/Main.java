@@ -24,7 +24,13 @@ public class Main {
                 checkArgsNum(args, 2);
                 Repository.add(args[1]);
                 break;
-            // TODO: FILL THE REST IN
+            case "commit":
+                checkArgsNum(args, 2);
+                if (args[1].length() == 0) {
+                    throw error("Please enter a commit message.");
+                }
+                Repository.commit(args[1]);
+                break;
         }
     }
     public static void checkArgsNum(String[] args, int n) {

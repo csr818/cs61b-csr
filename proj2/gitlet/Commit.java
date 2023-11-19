@@ -32,7 +32,7 @@ public class Commit implements Serializable {
     private String message;
     private String date;
     private String parent;
-    private Map<String, String> nameToBlobID = new HashMap<>();
+    private HashMap<String, String> nameToBlobID = new HashMap<>();
 
 
     /* TODO: fill in the rest of this class. */
@@ -68,8 +68,23 @@ public class Commit implements Serializable {
         return sha1(this.message, this.date, this.parent, this.nameToBlobID);
     }
 
+    // whether commit points from name to the id, if just diff id --> contents changed
     public boolean sameBlob(String name, String id) {
         String storeId = nameToBlobID.getOrDefault(name, "");
         return storeId.equals(id);
     }
+
+    public HashMap<String, String> getNameToBlobID() {
+        return this.nameToBlobID;
+    }
+
+    public void put(String name, String id) { nameToBlobID.put(name, id); }
+
+    public void remove(String name) { nameToBlobID.remove(name); }
+
+    public void updateMessage(String message) { this.message = message; }
+
+    public void updateTime(Date date) { this.date = dateToTimeStamp(date); }
+
+    public void updateParent(String p) { this.parent = p; }
 }
