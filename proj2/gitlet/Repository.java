@@ -145,5 +145,32 @@ public class Repository {
         String commitId = currentCommit.generateID();
         currentCommit.saveCommit(commitId);
         writeHead(commitId);
+        Stage emptyStage = new Stage();
+        // clear stage
+        emptyStage.saveStage();
+    }
+
+    public static void remove(String fileName) {
+        Stage s = Stage.readStage();
+        Commit head = headRead();
+        HashMap<String, String> n2b = head.getNameToBlobID();
+        if (!s.hasFile(fileName) && !n2b.containsKey(fileName)) {
+            throw error("No reason to remove the file.");
+        }
+        if (s.hasFile(fileName)) {
+            s.remove(fileName);
+        }
+        if (n2b.containsKey(fileName)) {
+            restrictedDelete(join(CWD, fileName));
+            s.getRemovalStage().add(fileName);
+            n2b.remove(fileName);
+        }
+        head.saveCommit(head.generateID());
+        s.saveStage();
+    }
+
+    public static void log() {
+        Commit head = headRead();
+
     }
 }

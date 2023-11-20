@@ -31,6 +31,14 @@ public class Main {
                 }
                 Repository.commit(args[1]);
                 break;
+            case "rm":
+                checkArgsNum(args, 2);
+                Repository.remove(args[1]);
+                break;
+            case "log":
+                checkArgsNum(args, 1);
+                Repository.log();
+                break;
         }
     }
     public static void checkArgsNum(String[] args, int n) {

@@ -65,7 +65,7 @@ public class Commit implements Serializable {
         writeObject(f, this);
     }
     public String generateID() {
-        return sha1(this.message, this.date, this.parent, this.nameToBlobID);
+        return sha1(this.message, this.date, this.parent, serialize(this.nameToBlobID));
     }
 
     // whether commit points from name to the id, if just diff id --> contents changed
