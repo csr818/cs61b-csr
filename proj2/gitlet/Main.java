@@ -27,7 +27,8 @@ public class Main {
             case "commit":
                 checkArgsNum(args, 2);
                 if (args[1].length() == 0) {
-                    throw error("Please enter a commit message.");
+                    System.out.println("Please enter a commit message.");
+                    System.exit(0);
                 }
                 Repository.commit(args[1]);
                 break;
@@ -38,6 +39,18 @@ public class Main {
             case "log":
                 checkArgsNum(args, 1);
                 Repository.log();
+                break;
+            case "global-log":
+                checkArgsNum(args, 1);
+                Repository.global_log();
+                break;
+            case "find":
+                checkArgsNum(args, 2);
+                Repository.find(args[1]);
+                break;
+            case "status":
+                checkArgsNum(args, 1);
+                Repository.status();
                 break;
         }
     }

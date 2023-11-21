@@ -33,6 +33,7 @@ public class Commit implements Serializable {
     private String date;
     private String parent;
     private HashMap<String, String> nameToBlobID = new HashMap<>();
+    private String commitId;
 
 
     /* TODO: fill in the rest of this class. */
@@ -45,18 +46,20 @@ public class Commit implements Serializable {
         this.message = message;
         this.date = dateToTimeStamp(date);
         this.parent = parent;
+        this.commitId = generateID();
     }
 
     // initialize the initial commit
     public Commit() {
         this.message = "initial commit";
         this.date = dateToTimeStamp(new Date(0));
-        this.parent = null;
+        this.parent = "";
+        this.commitId = generateID();
     }
 
     /** calculate ID and create a file named ID store*/
     public void saveCommit(String id){
-        File f = join(Repository.OBJECTS_DIR, id);
+        File f = join(Repository.COMMITS_DIR, id);
         try {
             f.createNewFile();
         } catch (IOException e) {
@@ -87,4 +90,17 @@ public class Commit implements Serializable {
     public void updateTime(Date date) { this.date = dateToTimeStamp(date); }
 
     public void updateParent(String p) { this.parent = p; }
+
+    public String getParent() { return this.parent; }
+
+    public String getId() { return this.commitId; }
+    public String getDate() { return this.date; }
+    public String getMessage() { return this.message; }
+    public void saveId(String id) {
+        this.commitId = id;
+    }
+
+    public String toString() {
+        return this.message + " " + this.date + " " + this.commitId;
+    }
 }

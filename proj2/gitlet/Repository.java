@@ -2,10 +2,7 @@ package gitlet;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 
 import gitlet.Commit;
 import gitlet.Blob;
@@ -37,8 +34,10 @@ public class Repository {
     // store blob and commit objects
     public static final File OBJECTS_DIR = join(GITLET_DIR, "objects");
 
+    public static final File COMMITS_DIR = join(OBJECTS_DIR, "commits");
     // store the latest commit of the branch
     public static final File REFS_DIR = join(GITLET_DIR, "refs");
+
     // current work branch commit HEAD
     public static final File HEAD_FILE = join(GITLET_DIR, "HEAD");
     // store the stage area objects
@@ -48,10 +47,12 @@ public class Repository {
     public static void init() {
         // create necessary file
         if (GITLET_DIR.exists() && GITLET_DIR.isDirectory()) {
-            throw error("A Gitlet version-control system already exists in the current directory.");
+            System.out.println("A Gitlet version-control system already exists in the current directory.");
+            System.exit(0);
         }
         GITLET_DIR.mkdir();
         OBJECTS_DIR.mkdir();
+        COMMITS_DIR.mkdir();
         REFS_DIR.mkdir();
         try {
             HEAD_FILE.createNewFile();
@@ -76,6 +77,8 @@ public class Repository {
         }
         writeContents(master, id);
         writeContents(HEAD_FILE, id);
+        Stage s = new Stage();
+        s.saveStage();
     }
 
     // the removed blob file has not been deleted !!!
@@ -84,14 +87,32 @@ public class Repository {
         File f = join(CWD, filename);
         // if file does not exist
         if (!f.exists()) {
-            throw error("file doesn't exist");
+            System.out.println("File doesn't exist");
+            System.exit(0);
         }
         byte[] contents = readContents(f);
         String id = sha1(filename, contents);
         Stage s = Stage.readStage();
-        File headFile = join(Repository.OBJECTS_DIR, readContentsAsString(Repository.HEAD_FILE));
+        File headFile = join(Repository.COMMITS_DIR, readContentsAsString(Repository.HEAD_FILE));
         Commit head = readObject(headFile, Commit.class);
+        Blob b = new Blob(filename, id, contents);
         //if the file in current commit and not changed(has same blobId), remove from the stage
+        if (!head.sameBlob(filename, id) || s.getRemovalStage().contains(id)) {
+            if (!s.hasExist(filename, id)) {
+                if (!s.getRemovalStage().contains((id))) {
+                    b.saveBlob();
+                    if (s.hasFile(filename)) {
+                        s.remove(filename);
+                    }
+                    s.put(filename, id);
+                    s.saveStage();
+                } else {
+                    s.getRemovalStage().remove(id);
+                    s.saveStage();
+                }
+            }
+        }
+        /*
         if (head.sameBlob(filename, id)) {
             if (s.hasFile(filename)) {
                 s.remove(filename);
@@ -108,18 +129,17 @@ public class Repository {
             }
         }
         s.saveStage();
+        */
     }
 
     private static Commit headRead() {
         String headId = readContentsAsString(HEAD_FILE);
-        File f = join(OBJECTS_DIR, headId);
+        File f = join(COMMITS_DIR, headId);
         return readObject(f, Commit.class);
     }
 
     private static void writeHead(String id) {
-        String headId = readContentsAsString(HEAD_FILE);
-        File f = join(OBJECTS_DIR, headId);
-        writeContents(f, id);
+        writeContents(HEAD_FILE, id);
     }
     public static void commit(String message) {
         // copy head commit -- try to update new commit from addStage
@@ -129,6 +149,10 @@ public class Repository {
         // try to update
         HashMap<String, String> addStage = s.getAddStage();
         HashSet<String> removalStage = s.getRemovalStage();
+        if (addStage.isEmpty() && removalStage.isEmpty()) {
+            System.out.println("No changes added to the commit.");
+            System.exit(0);
+        }
         for (String fileName : removalStage) {
             n2b.remove(fileName);
         }
@@ -143,34 +167,128 @@ public class Repository {
         currentCommit.updateParent(readContentsAsString(HEAD_FILE));
         // save commit
         String commitId = currentCommit.generateID();
+        currentCommit.saveId(commitId);
         currentCommit.saveCommit(commitId);
         writeHead(commitId);
         Stage emptyStage = new Stage();
         // clear stage
         emptyStage.saveStage();
+
+        //change master
+        File master = join(REFS_DIR, "master");
+        writeContents(master, commitId);
     }
 
+    // cannot change the commit
     public static void remove(String fileName) {
         Stage s = Stage.readStage();
         Commit head = headRead();
         HashMap<String, String> n2b = head.getNameToBlobID();
         if (!s.hasFile(fileName) && !n2b.containsKey(fileName)) {
-            throw error("No reason to remove the file.");
+            System.out.println("No reason to remove the file.");
+            System.exit(0);
         }
         if (s.hasFile(fileName)) {
             s.remove(fileName);
         }
         if (n2b.containsKey(fileName)) {
             restrictedDelete(join(CWD, fileName));
-            s.getRemovalStage().add(fileName);
-            n2b.remove(fileName);
+            String id = n2b.get(fileName);
+            s.getRemovalStage().add(id);
+            // del origin head , store the new one
         }
-        head.saveCommit(head.generateID());
         s.saveStage();
     }
 
+    private static void printCommit(Commit c) {
+        System.out.println("===");
+        System.out.print("commit ");
+        System.out.println(c.getId());
+        System.out.println("Date: " + c.getDate());
+        System.out.println(c.getMessage());
+        System.out.println();
+    }
     public static void log() {
-        Commit head = headRead();
+        Commit c = headRead();
+        while (true) {
+            printCommit(c);
+            if (c.getParent().length() == 0) {
+                break;
+            }
+            c = readObject(join(COMMITS_DIR, c.getParent()), Commit.class);
+        }
+    }
 
+    public static void global_log() {
+        List<String> commits = plainFilenamesIn(COMMITS_DIR);
+        for (String name : commits) {
+            Commit c = readObject(join(COMMITS_DIR, name), Commit.class);
+            printCommit(c);
+        }
+    }
+
+    public static void find(String message) {
+        List<String> commits = plainFilenamesIn(COMMITS_DIR);
+        boolean befound = false;
+        /*
+        System.out.println("-------print all");
+        for (String name : commits) {
+            Commit c = readObject(join(COMMITS_DIR, name), Commit.class);
+            System.out.println("******");
+            System.out.println(c.toString());
+            System.out.println("******");
+        }
+        System.out.println("-------");
+        */
+        for (String name : commits) {
+            Commit c = readObject(join(COMMITS_DIR, name), Commit.class);
+            if (c.getMessage().equals(message)) {
+                befound = true;
+                System.out.println(c.getId());
+            }
+        }
+        if (!befound) {
+            System.out.println("Found no commit with that message.");
+            System.exit(0);
+        }
+    }
+
+    public static void status() {
+        List<String> branches = plainFilenamesIn(REFS_DIR);
+        String HEADid = readContentsAsString(HEAD_FILE);
+        System.out.println("=== Branches ===");
+        for (String b : branches) {
+            String id = readContentsAsString(join(REFS_DIR, b));
+            if (id.equals(HEADid)) {
+                System.out.println("*" + b);
+            }
+            else {
+                System.out.println(b);
+            }
+        }
+        System.out.println();
+        //System.out.println();
+        System.out.println("=== Staged Files ===");
+        Stage s = Stage.readStage();
+        Set<String> addFiles = s.getAddStage().keySet();
+        for (String f : addFiles) {
+            System.out.println(f);
+        }
+        System.out.println();
+        //System.out.println();
+        System.out.println("=== Removed Files ===");
+        Set<String> removeFiles = s.getRemovalStage();
+        for (String f : removeFiles) {
+            Blob b = readObject(join(OBJECTS_DIR, f), Blob.class);
+            System.out.println(b.getFileName());
+        }
+        System.out.println();
+        //System.out.println();
+        System.out.println("=== Modifications Not Staged For Commit ===");
+        System.out.println();
+        //System.out.println();
+        System.out.println("=== Untracked Files ===");
+        System.out.println();
+        //System.out.println();
     }
 }
