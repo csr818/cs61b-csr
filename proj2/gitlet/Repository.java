@@ -195,7 +195,6 @@ public class Repository {
             restrictedDelete(join(CWD, fileName));
             String id = n2b.get(fileName);
             s.getRemovalStage().add(id);
-            // del origin head , store the new one
         }
         s.saveStage();
     }
@@ -230,7 +229,7 @@ public class Repository {
     public static void find(String message) {
         List<String> commits = plainFilenamesIn(COMMITS_DIR);
         boolean befound = false;
-        /*
+        /**
         System.out.println("-------print all");
         for (String name : commits) {
             Commit c = readObject(join(COMMITS_DIR, name), Commit.class);
@@ -290,5 +289,91 @@ public class Repository {
         System.out.println("=== Untracked Files ===");
         System.out.println();
         //System.out.println();
+    }
+    public static void checkoutFile(String name) {
+        Commit h = headRead();
+        HashMap<String, String> n2b = h.getNameToBlobID();
+        if (!n2b.containsKey(name)) {
+            System.out.println("File does not exist in that commit.");
+            System.exit(0);
+        }
+        writeContents(join(CWD, name), n2b.get(name));
+    }
+
+    public static void checkoutCommitFile(String commitId, String name) {
+        List<String> commits =  plainFilenamesIn(COMMITS_DIR);
+        if (!commits.contains(commitId)) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
+        Commit c = readObject(join(COMMITS_DIR, commitId), Commit.class);
+        HashMap<String, String> n2b = c.getNameToBlobID();
+        if (!n2b.containsKey(name)) {
+            System.out.println("File does not exist in that commit.");
+            System.exit(0);
+        }
+        writeContents(join(CWD, name), n2b.get(name));
+    }
+
+    public static void checkoutBranch(String branch) {
+        List<String> branches = plainFilenamesIn(REFS_DIR);
+        if (!branches.contains(branch)) {
+            System.out.println("No such branch exists.");
+            System.exit(0);
+        }
+        String branchId = readContentsAsString(join(REFS_DIR, branch));
+        String headId = readContentsAsString(HEAD_FILE);
+        if (headId.equals(branchId)) {
+            System.out.println("No need to checkout the current branch.");
+            System.exit(0);
+        }
+        Commit newCommit = readObject(join(COMMITS_DIR, branchId), Commit.class);
+        Commit curCommit = headRead();
+        // file in work dir but not in the curCommit,
+        List<String> fileOnlyInNewCommit = newCommit.getFilename();
+        List<String> fileBothIn = new ArrayList<>();
+        List<String> fileOnlyInCurCommit = curCommit.getFilename();
+
+        for (String name : curCommit.getFilename()) {
+            fileOnlyInNewCommit.remove(name);
+        }
+        for (String name : newCommit.getFilename()) {
+            fileOnlyInCurCommit.remove(name);
+        }
+        for (String name : curCommit.getFilename()) {
+            if (newCommit.getFilename().contains(name)) {
+                fileBothIn.add(name);
+            }
+        }
+        deleteFiles(fileOnlyInCurCommit);
+        overWriteFiles(fileBothIn, newCommit);
+        writeFiles(fileOnlyInNewCommit, newCommit);
+
+        Stage s = new Stage();
+        s.saveStage();
+
+        writeContents(HEAD_FILE, branchId);
+    }
+
+    private static void deleteFiles(List<String> ls) {
+        for (String name : ls) {
+            restrictedDelete(join(CWD, name));
+        }
+    }
+    private static void overWriteFiles(List<String> ls, Commit c) {
+        for (String name : ls) {
+            Blob b = readObject(join(OBJECTS_DIR, c.getNameToBlobID().get(name)), Blob.class);
+            writeContents(join(CWD, name), b.getContents());
+        }
+    }
+    private static void writeFiles(List<String> ls, Commit c) {
+        for (String name : ls) {
+            File f = join(CWD, name);
+            if (f.exists()) {
+                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                System.exit(0);
+            }
+        }
+        overWriteFiles(ls, c);
     }
 }

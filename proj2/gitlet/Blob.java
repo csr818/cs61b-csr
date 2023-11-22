@@ -46,4 +46,8 @@ public class Blob implements Serializable {
         }
         writeObject(f, this);
     }
+
+    public byte[] getContents() {
+        return this.contents;
+    }
 }

@@ -103,4 +103,12 @@ public class Commit implements Serializable {
     public String toString() {
         return this.message + " " + this.date + " " + this.commitId;
     }
+
+    public List<String> getFilename() {
+        List<String> names = new ArrayList<>();
+        for (String name : nameToBlobID.keySet()) {
+            names.add(name);
+        }
+        return names;
+    }
 }

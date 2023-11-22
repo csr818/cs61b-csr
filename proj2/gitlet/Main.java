@@ -52,6 +52,25 @@ public class Main {
                 checkArgsNum(args, 1);
                 Repository.status();
                 break;
+            case "checkout":
+                if (args.length == 3) {
+                    if (!args[1].equals("--")) {
+                        System.out.println("Incorrect operands.");
+                        System.exit(0);
+                    }
+                    Repository.checkoutFile(args[2]);
+                } else if (args.length == 4) {
+                    if (!args[2].equals("--")) {
+                        System.out.println("Incorrect operands.");
+                        System.exit(0);
+                    }
+                    Repository.checkoutCommitFile(args[1], args[3]);
+                } else if (args.length == 2) {
+                    Repository.checkoutBranch(args[1]);
+                } else {
+                    throw error("Incorrect operands.", (Object []) args);
+                }
+                break;
         }
     }
     public static void checkArgsNum(String[] args, int n) {
