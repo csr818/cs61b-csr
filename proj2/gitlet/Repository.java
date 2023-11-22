@@ -297,7 +297,8 @@ public class Repository {
             System.out.println("File does not exist in that commit.");
             System.exit(0);
         }
-        writeContents(join(CWD, name), n2b.get(name));
+        Blob b = readObject(join(OBJECTS_DIR, n2b.get(name)), Blob.class);
+        writeContents(join(CWD, name), b.getContents());
     }
 
     public static void checkoutCommitFile(String commitId, String name) {
@@ -312,7 +313,8 @@ public class Repository {
             System.out.println("File does not exist in that commit.");
             System.exit(0);
         }
-        writeContents(join(CWD, name), n2b.get(name));
+        Blob b = readObject(join(OBJECTS_DIR, n2b.get(name)), Blob.class);
+        writeContents(join(CWD, name), b.getContents());
     }
 
     public static void checkoutBranch(String branch) {
