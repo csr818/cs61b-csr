@@ -38,7 +38,7 @@ public class Repository {
     // store the latest commit of the branch
     public static final File REFS_DIR = join(GITLET_DIR, "refs");
 
-    // current work branch commit HEAD
+    // current work branch  HEAD
     public static final File HEAD_FILE = join(GITLET_DIR, "HEAD");
     // store the stage area objects
     public static final File STAGE_FILE = join(GITLET_DIR, "stage");
@@ -76,7 +76,7 @@ public class Repository {
             throw error(e.toString());
         }
         writeContents(master, id);
-        writeContents(HEAD_FILE, id);
+        writeContents(HEAD_FILE, "master");
         Stage s = new Stage();
         s.saveStage();
     }
@@ -93,7 +93,9 @@ public class Repository {
         byte[] contents = readContents(f);
         String id = sha1(filename, contents);
         Stage s = Stage.readStage();
-        File headFile = join(Repository.COMMITS_DIR, readContentsAsString(Repository.HEAD_FILE));
+        File workBranch = join(REFS_DIR, readContentsAsString(Repository.HEAD_FILE));
+        String workCommit = readContentsAsString(workBranch);
+        File headFile = join(Repository.COMMITS_DIR, workCommit);
         Commit head = readObject(headFile, Commit.class);
         Blob b = new Blob(filename, id, contents);
         //if the file in current commit and not changed(has same blobId), remove from the stage
@@ -133,13 +135,14 @@ public class Repository {
     }
 
     private static Commit headRead() {
-        String headId = readContentsAsString(HEAD_FILE);
-        File f = join(COMMITS_DIR, headId);
-        return readObject(f, Commit.class);
+        File workBranch = join(REFS_DIR, readContentsAsString(Repository.HEAD_FILE));
+        String workCommit = readContentsAsString(workBranch);
+        File headFile = join(Repository.COMMITS_DIR, workCommit);
+        return readObject(headFile, Commit.class);
     }
 
-    private static void writeHead(String id) {
-        writeContents(HEAD_FILE, id);
+    private static void writeHead(String branchName) {
+        writeContents(HEAD_FILE, branchName);
     }
     public static void commit(String message) {
         // copy head commit -- try to update new commit from addStage
@@ -164,19 +167,20 @@ public class Repository {
         // change commit
         currentCommit.updateMessage(message);
         currentCommit.updateTime(new Date());
-        currentCommit.updateParent(readContentsAsString(HEAD_FILE));
+        Commit headCommit = headRead();
+        currentCommit.updateParent(headCommit.getId());
         // save commit
         String commitId = currentCommit.generateID();
         currentCommit.saveId(commitId);
         currentCommit.saveCommit(commitId);
-        writeHead(commitId);
         Stage emptyStage = new Stage();
         // clear stage
         emptyStage.saveStage();
 
-        //change master
-        File master = join(REFS_DIR, "master");
-        writeContents(master, commitId);
+        //change current branch
+        String branchName = readContentsAsString(HEAD_FILE);
+        File branch = join(REFS_DIR, branchName);
+        writeContents(branch, commitId);
     }
 
     // cannot change the commit
@@ -252,9 +256,13 @@ public class Repository {
         }
     }
 
+    private static String getHeadId() {
+        return readContentsAsString(join(REFS_DIR, readContentsAsString(HEAD_FILE)));
+    }
     public static void status() {
         List<String> branches = plainFilenamesIn(REFS_DIR);
-        String HEADid = readContentsAsString(HEAD_FILE);
+        // write as a function
+        String HEADid = getHeadId();
         System.out.println("=== Branches ===");
         for (String b : branches) {
             String id = readContentsAsString(join(REFS_DIR, b));
@@ -324,14 +332,14 @@ public class Repository {
             System.exit(0);
         }
         String branchId = readContentsAsString(join(REFS_DIR, branch));
-        String headId = readContentsAsString(HEAD_FILE);
+        String headId = getHeadId();
         if (headId.equals(branchId)) {
             System.out.println("No need to checkout the current branch.");
             System.exit(0);
         }
         Commit newCommit = readObject(join(COMMITS_DIR, branchId), Commit.class);
         Commit curCommit = headRead();
-        // file in work dir but not in the curCommit,
+        // find the only files and common files
         List<String> fileOnlyInNewCommit = newCommit.getFilename();
         List<String> fileBothIn = new ArrayList<>();
         List<String> fileOnlyInCurCommit = curCommit.getFilename();
@@ -354,7 +362,7 @@ public class Repository {
         Stage s = new Stage();
         s.saveStage();
 
-        writeContents(HEAD_FILE, branchId);
+        writeContents(HEAD_FILE, branch);
     }
 
     private static void deleteFiles(List<String> ls) {
