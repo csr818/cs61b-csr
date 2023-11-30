@@ -71,6 +71,14 @@ public class Main {
                     throw error("Incorrect operands.", (Object []) args);
                 }
                 break;
+            case "branch":
+                checkArgsNum(args, 2);
+                Repository.branch(args[1]);
+                break;
+            case "rm-branch":
+                checkArgsNum(args, 2);
+                Repository.rmBranch(args[1]);
+                break;
         }
     }
     public static void checkArgsNum(String[] args, int n) {

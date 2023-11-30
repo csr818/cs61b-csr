@@ -265,8 +265,8 @@ public class Repository {
         String HEADid = getHeadId();
         System.out.println("=== Branches ===");
         for (String b : branches) {
-            String id = readContentsAsString(join(REFS_DIR, b));
-            if (id.equals(HEADid)) {
+            String workBranch = readContentsAsString(HEAD_FILE);
+            if (b.equals(workBranch)) {
                 System.out.println("*" + b);
             }
             else {
@@ -331,12 +331,12 @@ public class Repository {
             System.out.println("No such branch exists.");
             System.exit(0);
         }
-        String branchId = readContentsAsString(join(REFS_DIR, branch));
-        String headId = getHeadId();
-        if (headId.equals(branchId)) {
+        String workBranch = readContentsAsString(HEAD_FILE);
+        if (workBranch.equals(branch)) {
             System.out.println("No need to checkout the current branch.");
             System.exit(0);
         }
+        String branchId = readContentsAsString(join(REFS_DIR, branch));
         Commit newCommit = readObject(join(COMMITS_DIR, branchId), Commit.class);
         Commit curCommit = headRead();
         // find the only files and common files
@@ -385,5 +385,36 @@ public class Repository {
             }
         }
         overWriteFiles(ls, c);
+    }
+
+    public static void branch(String branch) {
+        List<String> branches = plainFilenamesIn(REFS_DIR);
+        if (branches.contains(branch)) {
+            System.out.println("A branch with that name already exists.");
+            System.exit(0);
+        }
+        File f = join(REFS_DIR, branch);
+        try {
+            f.createNewFile();
+        } catch(Exception e) {
+            throw error(e.toString());
+        }
+        String id = getHeadId();
+        writeContents(f, id);
+    }
+
+    public static void rmBranch(String branch) {
+        List<String> branches = plainFilenamesIn(REFS_DIR);
+        if (!branches.contains(branch)) {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
+        String workBranch = readContentsAsString(HEAD_FILE);
+        if (workBranch.equals(branch)) {
+            System.out.println("Cannot remove the current branch.");
+            System.exit(0);
+        }
+        File b = join(REFS_DIR, branch);
+        b.delete();
     }
 }
