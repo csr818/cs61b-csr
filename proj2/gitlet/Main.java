@@ -79,6 +79,10 @@ public class Main {
                 checkArgsNum(args, 2);
                 Repository.rmBranch(args[1]);
                 break;
+            case "reset":
+                checkArgsNum(args, 2);
+                Repository.reset(args[1]);
+                break;
         }
     }
     public static void checkArgsNum(String[] args, int n) {

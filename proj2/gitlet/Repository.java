@@ -311,7 +311,10 @@ public class Repository {
 
     public static void checkoutCommitFile(String commitId, String name) {
         List<String> commits =  plainFilenamesIn(COMMITS_DIR);
-        if (!commits.contains(commitId)) {
+        if (commitId.length() <= 8) {
+            commitId = checkShortId(commits, commitId);
+        }
+        if (commitId.equals("")) {
             System.out.println("No commit with that id exists.");
             System.exit(0);
         }
@@ -325,6 +328,14 @@ public class Repository {
         writeContents(join(CWD, name), b.getContents());
     }
 
+    private static String checkShortId(List<String> commits, String id) {
+        for (String c : commits) {
+            if (c.substring(0, id.length()).equals(id)) {
+                return c;
+            }
+        }
+        return "";
+    }
     public static void checkoutBranch(String branch) {
         List<String> branches = plainFilenamesIn(REFS_DIR);
         if (!branches.contains(branch)) {
@@ -416,5 +427,25 @@ public class Repository {
         }
         File b = join(REFS_DIR, branch);
         b.delete();
+    }
+
+    public static void reset(String id) {
+        List<String> lsCommit = plainFilenamesIn(COMMITS_DIR);
+        if (!lsCommit.contains(id)) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
+        String branch = readContentsAsString(HEAD_FILE);
+        File f = join(REFS_DIR, ".temp");
+        try {
+            f.createNewFile();
+        } catch(Exception e) {
+            throw error(e.toString());
+        }
+        writeContents(f, id);
+        checkoutBranch(".temp");
+        writeContents(join(REFS_DIR, branch), id);
+        writeContents(HEAD_FILE, branch);
+        f.delete();
     }
 }
