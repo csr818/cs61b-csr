@@ -215,10 +215,11 @@ public class Repository {
         Commit c = headRead();
         while (true) {
             printCommit(c);
-            if (c.getParent().length() == 0) {
+            if (c.getParent().size() == 0) {
                 break;
             }
-            c = readObject(join(COMMITS_DIR, c.getParent()), Commit.class);
+            // deliberately put the parent to display at the first index
+            c = readObject(join(COMMITS_DIR, c.getParent().get(0)), Commit.class);
         }
     }
 
@@ -314,7 +315,7 @@ public class Repository {
         if (commitId.length() <= 8) {
             commitId = checkShortId(commits, commitId);
         }
-        if (commitId.equals("")) {
+        if (commitId.equals("") || !commits.contains(commitId)) {
             System.out.println("No commit with that id exists.");
             System.exit(0);
         }
@@ -448,4 +449,10 @@ public class Repository {
         writeContents(HEAD_FILE, branch);
         f.delete();
     }
+
+//    private static Commit findCommonParent(Commit c1, Commit c2) {
+//        HashMap<String, Integer> commit1ToDepth = new HashMap<> ();
+//        HashMap<String, Integer> commit2ToDepth = new HashMap<> ();
+//
+//    }
 }

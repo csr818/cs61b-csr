@@ -31,7 +31,7 @@ public class Commit implements Serializable {
     /** The message of this Commit. */
     private String message;
     private String date;
-    private String parent;
+    private List<String> parent = new ArrayList<> ();
     private HashMap<String, String> nameToBlobID = new HashMap<>();
     private String commitId;
 
@@ -45,7 +45,7 @@ public class Commit implements Serializable {
     public Commit(String message, Date date, String parent) {
         this.message = message;
         this.date = dateToTimeStamp(date);
-        this.parent = parent;
+        this.parent.add(parent);
         this.commitId = generateID();
     }
 
@@ -53,7 +53,6 @@ public class Commit implements Serializable {
     public Commit() {
         this.message = "initial commit";
         this.date = dateToTimeStamp(new Date(0));
-        this.parent = "";
         this.commitId = generateID();
     }
 
@@ -68,7 +67,7 @@ public class Commit implements Serializable {
         writeObject(f, this);
     }
     public String generateID() {
-        return sha1(this.message, this.date, this.parent, serialize(this.nameToBlobID));
+        return sha1(this.message, this.date, serialize((Serializable) this.parent), serialize(this.nameToBlobID));
     }
 
     // whether commit points from name to the id, if just diff id --> contents changed
@@ -89,9 +88,13 @@ public class Commit implements Serializable {
 
     public void updateTime(Date date) { this.date = dateToTimeStamp(date); }
 
-    public void updateParent(String p) { this.parent = p; }
+    public void updateParent(String p) {
+        ArrayList<String> newParent = new ArrayList<>();
+        newParent.add(p);
+        this.parent = newParent;
+    }
 
-    public String getParent() { return this.parent; }
+    public List<String> getParent() { return this.parent; }
 
     public String getId() { return this.commitId; }
     public String getDate() { return this.date; }
