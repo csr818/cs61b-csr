@@ -450,9 +450,51 @@ public class Repository {
         f.delete();
     }
 
-//    private static Commit findCommonParent(Commit c1, Commit c2) {
-//        HashMap<String, Integer> commit1ToDepth = new HashMap<> ();
-//        HashMap<String, Integer> commit2ToDepth = new HashMap<> ();
-//
-//    }
+    private static Commit findCommonParent(Commit c1, Commit c2) {
+        HashMap<String, Integer> commit1ToDepth = new HashMap<> ();
+        Deque<Commit> deque = new LinkedList<>();
+        // store all commits from c1
+        deque.addLast(c1);
+        int depth = 0;
+        while (deque.size() > 0) {
+            int dequeSize = deque.size();
+            for (int i = 0; i < dequeSize; ++i) {
+                Commit curCommit = deque.removeFirst();
+                List<String> parents = curCommit.getParent();
+                for (String p : parents) {
+                    deque.addLast(readObject(join(COMMITS_DIR, p), Commit.class));
+                }
+                commit1ToDepth.put(curCommit.getId(), depth);
+            }
+            depth += 1;
+        }
+
+        deque.addLast(c2);
+        while (deque.size() > 0) {
+            Commit curCommit = deque.removeFirst();
+            if (commit1ToDepth.containsKey(curCommit)) {
+                return curCommit;
+            }
+            List<String> parents = curCommit.getParent();
+            for (String p : parents) {
+                deque.addLast(readObject(join(COMMITS_DIR, p), Commit.class));
+            }
+        }
+        return null;
+    }
+
+    public static void merge(String branch) {
+        Commit branchCommit = readObject(join(COMMITS_DIR, branch), Commit.class);
+        Commit currentCommit = headRead();
+        Commit splitCommit = findCommonParent(branchCommit, currentCommit);
+        if (splitCommit.getId().equals(branchCommit.getId())) {
+            System.out.println("Given branch is an ancestor of the current branch.");
+            System.exit(0);
+        }
+        if (splitCommit.getId().equals(currentCommit.getId())) {
+            checkoutBranch(branch);
+            System.out.println("Current branch fast-forwarded.");
+            System.exit(0);
+        }
+    }
 }
