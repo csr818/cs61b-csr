@@ -113,10 +113,12 @@ def Group(n):
     return Mat.group(n)
 
 def contents(filename):
+    # print("---------------", filename)
     try:
         with open(filename) as inp:
             return inp.read()
     except FileNotFoundError:
+        # print("not found")
         return None
 
 def editDistance(s1, s2):
@@ -205,6 +207,8 @@ def fileExists(f, dir):
 def correctFileOutput(name, expected, dir):
     userData = canonicalize(contents(join(dir, name)))
     stdData = canonicalize(contents(join(src_dir, expected)))
+    #print("----------",join(dir, name) , userData)
+    # print(stdData)
     return userData == stdData
 
 def correctProgramOutput(expected, actual, last_groups, is_regexp):
