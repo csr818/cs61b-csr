@@ -114,4 +114,7 @@ public class Commit implements Serializable {
         }
         return names;
     }
+    public void updateId() {
+        this.commitId = generateID();
+    }
 }

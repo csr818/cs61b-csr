@@ -9,6 +9,7 @@ import gitlet.Blob;
 
 
 import static gitlet.Utils.*;
+import static gitlet.Utils.restrictedDelete;
 
 // TODO: any imports you need here
 
@@ -156,8 +157,16 @@ public class Repository {
             System.out.println("No changes added to the commit.");
             System.exit(0);
         }
-        for (String fileName : removalStage) {
-            n2b.remove(fileName);
+        for (String fileId : removalStage) { // this is a bug, removalStage stores the blobId
+            Iterator<Map.Entry<String, String>> iterator = n2b.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, String> entry = iterator.next();
+                if (entry.getValue().equals(fileId)) {
+                    iterator.remove();
+                    break;
+                }
+            }
+            //System.out.println("the remove file is " + fileId);
         }
         for (Map.Entry<String, String> entry : addStage.entrySet()) {
             String fileName = entry.getKey();
@@ -181,6 +190,7 @@ public class Repository {
         String branchName = readContentsAsString(HEAD_FILE);
         File branch = join(REFS_DIR, branchName);
         writeContents(branch, commitId);
+        //printCommitFiles(currentCommit, currentCommit.getMessage());
     }
 
     // cannot change the commit
@@ -472,7 +482,7 @@ public class Repository {
         deque.addLast(c2);
         while (deque.size() > 0) {
             Commit curCommit = deque.removeFirst();
-            if (commit1ToDepth.containsKey(curCommit)) {
+            if (commit1ToDepth.containsKey(curCommit.getId())) {
                 return curCommit;
             }
             List<String> parents = curCommit.getParent();
@@ -484,9 +494,12 @@ public class Repository {
     }
 
     public static void merge(String branch) {
-        Commit branchCommit = readObject(join(COMMITS_DIR, branch), Commit.class);
+        Commit branchCommit = readObject(join(COMMITS_DIR, readContentsAsString(join(REFS_DIR, branch))), Commit.class);
         Commit currentCommit = headRead();
         Commit splitCommit = findCommonParent(branchCommit, currentCommit);
+        // printCommitFiles(splitCommit, "splitCommit");
+        // printCommitFiles(currentCommit, "currentCommit");
+        // printCommitFiles(branchCommit, "givenCommit");
         if (splitCommit.getId().equals(branchCommit.getId())) {
             System.out.println("Given branch is an ancestor of the current branch.");
             System.exit(0);
@@ -496,5 +509,100 @@ public class Repository {
             System.out.println("Current branch fast-forwarded.");
             System.exit(0);
         }
+        HashMap<String, String> splitCommitN2b = splitCommit.getNameToBlobID();
+        HashMap<String, String> branchCommitN2b = branchCommit.getNameToBlobID();
+        HashMap<String, String> currentCommitN2b = currentCommit.getNameToBlobID();
+        Commit mergeCommit = new Commit();
+        for (Map.Entry<String, String> entry : splitCommitN2b.entrySet()) {
+            String fileName = entry.getKey();
+            String BlobId = entry.getValue();
+            if (branchCommitN2b.containsKey(fileName) && currentCommitN2b.containsKey(fileName)) {
+                String branchBlobId = branchCommitN2b.get(fileName);
+                String currentBlobId = branchCommitN2b.get(fileName);
+                if (BlobId.equals(branchBlobId) && BlobId.equals(currentBlobId)) {
+                    mergeCommit.getNameToBlobID().put(fileName, BlobId);
+                } else if (BlobId.equals(branchBlobId)) {
+                    mergeCommit.getNameToBlobID().put(fileName, currentBlobId);
+                } else if (BlobId.equals(currentBlobId)) {
+                    mergeCommit.getNameToBlobID().put(fileName, branchBlobId);
+                } else {
+                    System.out.println("Encountered a merge conflict.");
+                    // conflict
+                }
+            }
+        }
+        // find the files only exist in the current branch or given branch
+        Set<String> filesInSplitCommit = splitCommitN2b.keySet();
+        Set<String> filesInBranchCommit = branchCommitN2b.keySet();
+        Set<String> filesInCurrentCommit = currentCommitN2b.keySet();
+        Set<String> filesNotInSplit = new HashSet<> (filesInCurrentCommit);
+        filesNotInSplit.addAll(filesInBranchCommit);
+        filesNotInSplit.removeAll(filesInSplitCommit);
+        for (String file : filesNotInSplit) {
+            if (branchCommitN2b.containsKey(file) && currentCommitN2b.containsKey(file)) {
+                System.out.println("Encountered a merge conflict.");
+                // conflict
+            } else if (branchCommitN2b.containsKey(file)) {
+                mergeCommit.getNameToBlobID().put(file, branchCommitN2b.get(file));
+            } else {
+                mergeCommit.getNameToBlobID().put(file, currentCommitN2b.get(file));
+            }
+        }
+        // update the part of the commit
+        mergeCommit.getParent().add(currentCommit.getId());
+        mergeCommit.getParent().add(branchCommit.getId());
+        mergeCommit.updateMessage("Merged " + branch + " into " + readContentsAsString(HEAD_FILE) + ".");
+        mergeCommit.updateId();
+        mergeCommit.saveCommit(mergeCommit.getId());
+        // work directory files change
+
+        // change the file with different contents and add the new files
+        for (Map.Entry<String, String> entry : mergeCommit.getNameToBlobID().entrySet()) {
+            String fileName = entry.getKey();
+            String blobId = entry.getValue();
+            if (!currentCommitN2b.containsKey(fileName)) {
+                File f = join(CWD, fileName);
+                try {
+                    f.createNewFile();
+                } catch (Exception e) {
+                    throw error(e.toString());
+                }
+            }
+            if (!blobId.equals(currentCommitN2b.getOrDefault(fileName, ""))) {
+                File f = join(CWD, fileName);
+                writeContents(f, readObject(join(OBJECTS_DIR, blobId), Blob.class).getContents());
+            }
+        }
+        // delete the file which is not appeared in mergeCommit
+        for (Map.Entry<String, String> entry : currentCommitN2b.entrySet()) {
+            String fileName = entry.getKey();
+            String blobId = entry.getValue();
+            if (!mergeCommit.getNameToBlobID().containsKey(fileName)) {
+                // System.out.println("---------- in the work directory but not in mergeCommit " + fileName);
+                restrictedDelete(join(CWD, fileName));
+            }
+        }
+        // printCommitFiles(mergeCommit, "merged");
+        List<String> currentFiles = plainFilenamesIn(CWD);
+        for (String fileName : currentFiles) {
+            // System.out.println("---------- in the work directory files " + fileName);
+            if (!mergeCommit.getNameToBlobID().containsKey(fileName)) {
+               // System.out.println("---------- in the work directory but not in mergeCommit " + fileName);
+                File f = join(CWD, fileName);
+                restrictedDelete(f);
+            }
+        }
+        // change HEAD branch points to the merged commit
+        writeContents(join(REFS_DIR, readContentsAsString(HEAD_FILE)), mergeCommit.getId());
+        Stage s = new Stage();
+        s.saveStage();
+    }
+
+    private static  void printCommitFiles(Commit c, String name) {
+        System.out.println("--------------the files contained are as below : " + name);
+        for (String file : c.getNameToBlobID().keySet()) {
+            System.out.println(file);
+        }
+        System.out.println("--------------");
     }
 }

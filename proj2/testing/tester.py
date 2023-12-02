@@ -362,7 +362,7 @@ def doTest(test):
                 if msg != "OK":
                     print("ERROR ({})".format(msg))
                     reportDetails(test, included_files, line_num)
-                    return False
+                    return False # -------------------
             elif Match(r'=\s*(\S+)\s+(\S+)', line):
                 if not correctFileOutput(Group(1), Group(2), cdir):
                     print("ERROR (file {} has incorrect content)"
