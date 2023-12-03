@@ -532,6 +532,11 @@ public class Repository {
     }
 
     public static void merge(String branch) {
+        List<String> allBranches = plainFilenamesIn(REFS_DIR);
+        if (!allBranches.contains(branch)) {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
         Commit branchCommit = readObject(join(COMMITS_DIR, readContentsAsString(join(REFS_DIR, branch))), Commit.class);
         Commit currentCommit = headRead();
         Commit splitCommit = findCommonParent(branchCommit, currentCommit);
@@ -539,6 +544,10 @@ public class Repository {
         // printCommitFiles(splitCommit, "splitCommit");
         // printCommitFiles(currentCommit, "currentCommit");
         // printCommitFiles(branchCommit, "givenCommit");
+        if (branchCommit.getId().equals(currentCommit.getId())) {
+            System.out.println("Cannot merge a branch with itself.");
+            System.exit(0);
+        }
         if (splitCommit.getId().equals(branchCommit.getId())) {
             System.out.println("Given branch is an ancestor of the current branch.");
             System.exit(0);
@@ -626,6 +635,7 @@ public class Repository {
         mergeCommit.saveCommit(mergeCommit.getId());
         // work directory files change
 
+        List<String> currentFiles = plainFilenamesIn(CWD);
         // change the file with different contents and add the new files
         for (Map.Entry<String, String> entry : mergeCommit.getNameToBlobID().entrySet()) {
             String fileName = entry.getKey();
@@ -640,6 +650,11 @@ public class Repository {
             }
             if (!blobId.equals(currentCommitN2b.getOrDefault(fileName, ""))) {
                 File f = join(CWD, fileName);
+                // overwrite------
+                if (currentFiles.contains(fileName) && !currentCommitN2b.containsKey(fileName)) {
+                    System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                    System.exit(0);
+                }
                 writeContents(f, new String(readObject(join(OBJECTS_DIR, blobId), Blob.class).getContents(), StandardCharsets.UTF_8));
             }
         }
@@ -653,11 +668,16 @@ public class Repository {
             }
         }
         // printCommitFiles(mergeCommit, "merged");
-        List<String> currentFiles = plainFilenamesIn(CWD);
+
         for (String fileName : currentFiles) {
             // System.out.println("---------- in the work directory files " + fileName);
             if (!mergeCommit.getNameToBlobID().containsKey(fileName) && !conflictFiles.contains(fileName)) {
                // System.out.println("---------- in the work directory but not in mergeCommit " + fileName);
+                // files don't exist in the currentCommit but in the work directory and is not the conflictFile should trigger an exit
+                if (!currentCommitN2b.containsKey(fileName)) {
+                    System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                    System.exit(0);
+                }
                 File f = join(CWD, fileName);
                 restrictedDelete(f);
             }
@@ -675,5 +695,12 @@ public class Repository {
             System.out.println(file);
         }
         System.out.println("--------------");
+    }
+
+    public static void checkIfInitialize() {
+        if (!GITLET_DIR.exists()) {
+            System.out.println("Not in an initialized Gitlet directory.");
+            System.exit(0);
+        }
     }
 }

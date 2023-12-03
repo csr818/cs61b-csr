@@ -12,9 +12,11 @@ public class Main {
      */
     public static void main(String[] args) {
         if (args.length == 0) {
-            throw error("Incorrect operands.");
+            System.out.println("Please enter a command.");
+            System.exit(0);
         }
         String firstArg = args[0];
+
         switch(firstArg) {
             case "init":
                 checkArgsNum(args, 1);
@@ -22,10 +24,12 @@ public class Main {
                 break;
             case "add":
                 checkArgsNum(args, 2);
+                Repository.checkIfInitialize();
                 Repository.add(args[1]);
                 break;
             case "commit":
                 checkArgsNum(args, 2);
+                Repository.checkIfInitialize();
                 if (args[1].length() == 0) {
                     System.out.println("Please enter a commit message.");
                     System.exit(0);
@@ -34,25 +38,31 @@ public class Main {
                 break;
             case "rm":
                 checkArgsNum(args, 2);
+                Repository.checkIfInitialize();
                 Repository.remove(args[1]);
                 break;
             case "log":
                 checkArgsNum(args, 1);
+                Repository.checkIfInitialize();
                 Repository.log();
                 break;
             case "global-log":
                 checkArgsNum(args, 1);
+                Repository.checkIfInitialize();
                 Repository.global_log();
                 break;
             case "find":
                 checkArgsNum(args, 2);
+                Repository.checkIfInitialize();
                 Repository.find(args[1]);
                 break;
             case "status":
                 checkArgsNum(args, 1);
+                Repository.checkIfInitialize();
                 Repository.status();
                 break;
             case "checkout":
+                Repository.checkIfInitialize();
                 if (args.length == 3) {
                     if (!args[1].equals("--")) {
                         System.out.println("Incorrect operands.");
@@ -73,20 +83,27 @@ public class Main {
                 break;
             case "branch":
                 checkArgsNum(args, 2);
+                Repository.checkIfInitialize();
                 Repository.branch(args[1]);
                 break;
             case "rm-branch":
                 checkArgsNum(args, 2);
+                Repository.checkIfInitialize();
                 Repository.rmBranch(args[1]);
                 break;
             case "reset":
                 checkArgsNum(args, 2);
+                Repository.checkIfInitialize();
                 Repository.reset(args[1]);
                 break;
             case "merge":
                 checkArgsNum(args, 2);
+                Repository.checkIfInitialize();
                 Repository.merge(args[1]);
                 break;
+            default:
+                System.out.println("No command with that name exists.");
+                System.exit(0);
         }
     }
     public static void checkArgsNum(String[] args, int n) {
