@@ -49,7 +49,7 @@ public class Main {
             case "global-log":
                 checkArgsNum(args, 1);
                 Repository.checkIfInitialize();
-                Repository.global_log();
+                Repository.globalLog();
                 break;
             case "find":
                 checkArgsNum(args, 2);

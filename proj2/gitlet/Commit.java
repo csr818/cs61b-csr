@@ -1,9 +1,5 @@
 package gitlet;
 
-// TODO: any imports you need here
-
-import org.w3c.dom.UserDataHandler;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -14,14 +10,14 @@ import java.util.*;
 import static gitlet.Utils.*;
 
 /** Represents a gitlet commit object.
- *  TODO: It's a good idea to give a description here of what else this Class
+ *
  *  does at a high level.
  *
  *  @author TODO
  */
 public class Commit implements Serializable {
     /**
-     * TODO: add instance variables here.
+     *
      *
      * List all instance variables of the Commit class here with a useful
      * comment above them describing what that variable represents and how that
@@ -31,12 +27,11 @@ public class Commit implements Serializable {
     /** The message of this Commit. */
     private String message;
     private String date;
-    private List<String> parent = new ArrayList<> ();
+    private List<String> parent = new ArrayList<>();
     private HashMap<String, String> nameToBlobID = new HashMap<>();
     private String commitId;
 
 
-    /* TODO: fill in the rest of this class. */
 
     public static String dateToTimeStamp(Date date) {
         DateFormat dateFormat = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.US);
@@ -57,7 +52,7 @@ public class Commit implements Serializable {
     }
 
     /** calculate ID and create a file named ID store*/
-    public void saveCommit(String id){
+    public void saveCommit(String id) {
         File f = join(Repository.COMMITS_DIR, id);
         try {
             f.createNewFile();
@@ -67,7 +62,9 @@ public class Commit implements Serializable {
         writeObject(f, this);
     }
     public String generateID() {
-        return sha1(this.message, this.date, serialize((Serializable) this.parent), serialize(this.nameToBlobID));
+        return sha1(this.message, this.date,
+                serialize((Serializable) this.parent),
+                serialize(this.nameToBlobID));
     }
 
     // whether commit points from name to the id, if just diff id --> contents changed
@@ -80,13 +77,21 @@ public class Commit implements Serializable {
         return this.nameToBlobID;
     }
 
-    public void put(String name, String id) { nameToBlobID.put(name, id); }
+    public void put(String name, String id) {
+        nameToBlobID.put(name, id);
+    }
 
-    public void remove(String name) { nameToBlobID.remove(name); }
+    public void remove(String name) {
+        nameToBlobID.remove(name);
+    }
 
-    public void updateMessage(String message) { this.message = message; }
+    public void updateMessage(String message) {
+        this.message = message;
+    }
 
-    public void updateTime(Date date) { this.date = dateToTimeStamp(date); }
+    public void updateTime(Date date) {
+        this.date = dateToTimeStamp(date);
+    }
 
     public void updateParent(String p) {
         ArrayList<String> newParent = new ArrayList<>();
@@ -94,11 +99,22 @@ public class Commit implements Serializable {
         this.parent = newParent;
     }
 
-    public List<String> getParent() { return this.parent; }
+    public List<String> getParent() {
+        return this.parent;
+    }
 
-    public String getId() { return this.commitId; }
-    public String getDate() { return this.date; }
-    public String getMessage() { return this.message; }
+    public String getId() {
+        return this.commitId;
+    }
+
+    public String getDate() {
+        return this.date;
+    }
+
+    public String getMessage() {
+        return this.message;
+    }
+
     public void saveId(String id) {
         this.commitId = id;
     }

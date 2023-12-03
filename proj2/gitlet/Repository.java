@@ -5,24 +5,24 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import gitlet.Commit;
-import gitlet.Blob;
+
+
 
 
 import static gitlet.Utils.*;
 import static gitlet.Utils.restrictedDelete;
 
-// TODO: any imports you need here
+//
 
 /** Represents a gitlet repository.
- *  TODO: It's a good idea to give a description here of what else this Class
+ *
  *  does at a high level.
  *
  *  @author TODO
  */
 public class Repository {
     /**
-     * TODO: add instance variables here.
+     *
      *
      * List all instance variables of the Repository class here with a useful
      * comment above them describing what that variable represents and how that
@@ -49,7 +49,8 @@ public class Repository {
     public static void init() {
         // create necessary file
         if (GITLET_DIR.exists() && GITLET_DIR.isDirectory()) {
-            System.out.println("A Gitlet version-control system already exists in the current directory.");
+            System.out.println("A Gitlet version-control system " +
+                    "already exists in the current directory.");
             System.exit(0);
         }
         GITLET_DIR.mkdir();
@@ -234,7 +235,7 @@ public class Repository {
         }
     }
 
-    public static void global_log() {
+    public static void globalLog() {
         List<String> commits = plainFilenamesIn(COMMITS_DIR);
         for (String name : commits) {
             Commit c = readObject(join(COMMITS_DIR, name), Commit.class);
@@ -274,14 +275,13 @@ public class Repository {
     public static void status() {
         List<String> branches = plainFilenamesIn(REFS_DIR);
         // write as a function
-        String HEADid = getHeadId();
+        // String HEADId = getHeadId();
         System.out.println("=== Branches ===");
         for (String b : branches) {
             String workBranch = readContentsAsString(HEAD_FILE);
             if (b.equals(workBranch)) {
                 System.out.println("*" + b);
-            }
-            else {
+            } else {
                 System.out.println(b);
             }
         }
@@ -403,7 +403,8 @@ public class Repository {
         for (String name : ls) {
             File f = join(CWD, name);
             if (f.exists()) {
-                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                System.out.println("There is an untracked file in the way;" +
+                        " delete it, or add and commit it first.");
                 System.exit(0);
             }
         }
@@ -419,7 +420,7 @@ public class Repository {
         File f = join(REFS_DIR, branch);
         try {
             f.createNewFile();
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw error(e.toString());
         }
         String id = getHeadId();
@@ -451,7 +452,7 @@ public class Repository {
         File f = join(REFS_DIR, ".temp");
         try {
             f.createNewFile();
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw error(e.toString());
         }
         writeContents(f, id);
@@ -496,9 +497,12 @@ public class Repository {
 
     private static String dealConflict(Blob branchConflictBlob, Blob currentConflictBlob) {
         File conflictFile = join(CWD, currentConflictBlob.getFileName());
-        //System.out.println("------------" + conflictFile.getPath());
-        // System.out.println(currentConflictBlob.getFileName() + " " + branchConflictBlob.getFileName());
-        // System.out.println(currentConflictBlob.getFileName().equals(branchConflictBlob.getFileName()));
+        /**System.out.println("------------" + conflictFile.getPath());
+        // System.out.println(currentConflictBlob.getFileName()
+         + " " + branchConflictBlob.getFileName());
+        // System.out.println(currentConflictBlob.getFileName().
+         equals(branchConflictBlob.getFileName()));
+        */
         try {
             conflictFile.createNewFile();
         } catch (Exception e) {
@@ -509,10 +513,12 @@ public class Repository {
         }
         String conflictContent = "<<<<<<< HEAD\n" +  new String(currentConflictBlob.getContents(), StandardCharsets.UTF_8) + "=======\n" + new String(branchConflictBlob.getContents(), StandardCharsets.UTF_8) + ">>>>>>>\n";
         writeContents(conflictFile, conflictContent);
-        //System.out.println("------------" + conflictFile.getPath());
+        /**System.out.println("------------" + conflictFile.getPath());
         // System.out.print(readContentsAsString(conflictFile));
-        //File FileOut = new File("D:\\courses\\cs61b\\skeleton-sp21\\proj2\\testing\\src\\out.txt");
+        //File FileOut = new File("D:\\courses\\cs61b\\
+         skeleton-sp21\\proj2\\testing\\src\\out.txt");
         //writeContents(FileOut, conflictContent);
+         */
         return currentConflictBlob.getFileName();
     }
 
@@ -535,6 +541,11 @@ public class Repository {
         List<String> allBranches = plainFilenamesIn(REFS_DIR);
         if (!allBranches.contains(branch)) {
             System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
+        Stage s = Stage.readStage();
+        if (!s.getAddStage().isEmpty() || !s.getRemovalStage().isEmpty()) {
+            System.out.println("You have uncommitted changes.");
             System.exit(0);
         }
         Commit branchCommit = readObject(join(COMMITS_DIR, readContentsAsString(join(REFS_DIR, branch))), Commit.class);
@@ -564,15 +575,15 @@ public class Repository {
         List<String> conflictFiles = new ArrayList<>();
         for (Map.Entry<String, String> entry : splitCommitN2b.entrySet()) {
             String fileName = entry.getKey();
-            String BlobId = entry.getValue();
+            String blobId = entry.getValue();
             if (branchCommitN2b.containsKey(fileName) && currentCommitN2b.containsKey(fileName)) {
                 String branchBlobId = branchCommitN2b.get(fileName);
                 String currentBlobId = currentCommitN2b.get(fileName);
-                if (BlobId.equals(branchBlobId) && BlobId.equals(currentBlobId)) {
-                    mergeCommit.getNameToBlobID().put(fileName, BlobId);
-                } else if (BlobId.equals(branchBlobId)) {
+                if (blobId.equals(branchBlobId) && blobId.equals(currentBlobId)) {
+                    mergeCommit.getNameToBlobID().put(fileName, blobId);
+                } else if (blobId.equals(branchBlobId)) {
                     mergeCommit.getNameToBlobID().put(fileName, currentBlobId);
-                } else if (BlobId.equals(currentBlobId)) {
+                } else if (blobId.equals(currentBlobId)) {
                     mergeCommit.getNameToBlobID().put(fileName, branchBlobId);
                 } else {
                     System.out.println("Encountered a merge conflict.");
@@ -582,13 +593,17 @@ public class Repository {
                     conflictFile = dealConflict(branchBlob, currentBlob);
                     conflictFiles.add(conflictFile);
                 }
-            } else if (branchCommitN2b.containsKey(fileName) && !currentCommitN2b.containsKey(fileName) && !branchCommitN2b.get(fileName).equals(splitCommitN2b.get(fileName))){
+            } else if (branchCommitN2b.containsKey(fileName)
+                    && !currentCommitN2b.containsKey(fileName)
+                    && !branchCommitN2b.get(fileName).equals(splitCommitN2b.get(fileName))) {
                 System.out.println("Encountered a merge conflict.");
                 String branchBlobId = branchCommitN2b.get(fileName);
                 Blob branchBlob = readObject(join(OBJECTS_DIR, branchBlobId), Blob.class);
                 conflictFile = dealConflict(branchBlob);
                 conflictFiles.add(conflictFile);
-            } else if (currentCommitN2b.containsKey(fileName) && !branchCommitN2b.containsKey(fileName) && !currentCommitN2b.get(fileName).equals(splitCommitN2b.get(fileName))) {
+            } else if (currentCommitN2b.containsKey(fileName) &&
+                    !branchCommitN2b.containsKey(fileName) &&
+                    !currentCommitN2b.get(fileName).equals(splitCommitN2b.get(fileName))) {
                 System.out.println("Encountered a merge conflict.");
                 String currentBlobId = currentCommitN2b.get(fileName);
                 Blob currentBlob = readObject(join(OBJECTS_DIR, currentBlobId), Blob.class);
